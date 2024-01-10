@@ -362,6 +362,40 @@ H w
 
 In C, a function itself is not a variable, but it is possible to define pointers to functions, which can be assigned, placed in arrays, passed to functions, returned by functions, and so on.
 
+# 5.12 Complicated declarations
+
+C is sometimes castigated for the syntax of its declarations, particularly ones that involve pointers to functions. The syntax is an attempt to make the declaration and the use agree; it works well for simple cases, but it can be confusing for the harder ones, because declarations cannot be read left to right, and because parentheses are over-used. This difference between
+
+```c
+int *f(); // f: function returning pointer to int
+```
+
+and
+
+```c
+int (*pf)(); // pf: pointer to function returning int
+```
+
+---
+
+```c
+char **argv
+    // argv: pointer to pointer to char
+int (*daytab)[13]
+    // daytab: pointer to array[13] of int
+int *daytab[13]
+    // daytab: array[13] of pointer to int
+void *comp()
+    // comp: function returning pointer to void
+void (*comp)()
+    // comp: pointer to function returning void
+char (*(*x())[])()
+    // x: function returning pointer to array[] of pointer to function returning char
+char (*(*x[3])())[5]
+    // x: array[3] of pointer to function returning pointer to array[5] of char
+```
+
+
 # Exercises
 
 ## Exercise 5-3
