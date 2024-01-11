@@ -241,6 +241,30 @@ The function value is the first character of the word, or `EOF` for end of file,
 
 `getword` also uses `isspace` to skip white space, `isalpha` to identify letters, and `isalnum` to identify letters and digits.
 
+---
+
+```c
+// count C keywords
+int main(void)
+{
+    int n;
+    char word[MAXWORD];
+
+    while (getword(word, MAXWORD) != EOF)
+        if (isalpha(word[0]))
+            if ((n = binsearch(word, keytab, NKEYS)) >= 0)
+                keytab[n].count++;
+
+    for (n = 0; n < NKEYS; n++)
+        if (keytab[n].count > 0)
+            printf("%4d %s\n", keytab[n].count, keytab[n].word);
+
+    return 0;
+}
+```
+
+`main` 函数当中，while loop 用来 count，for loop 用来 print。在 while loop 中，`getword` 有可能提取到各种字符或字符串，包括那些非 C 关键词的字符或字符串。但在 `if` 的检查中，只有第一个字符是字母的字符串才可以通过。通过这个 `if` 只会进入第二个 `if` 的检查。这里在做一个 binary search，它会在 `keytab` 这个装了很多个叫作 `key` 的 structure 的数组当中，搜寻 `word`。如果在其中找到了的话，那么把 `keytab` 中对应的 `count` 加 1。如果没有找到，那么跳过。 
+
 # Exercises
 
 ## Exercise 6-1
