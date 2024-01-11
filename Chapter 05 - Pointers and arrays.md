@@ -6,6 +6,9 @@
 - [5.5 Character pointers and functions](#55-character-pointers-and-functions)
 - [5.6 Pointer array; Pointers to pointers](#56-pointer-array-pointers-to-pointers)
 - [5.7 Multi-dimensional arrays](#57-multi-dimensional-arrays)
+- [5.10 Command-line arguments](#510-command-line-arguments)
+- [5.11 Pointers to functions](#511-pointers-to-functions)
+- [5.12 Complicated declarations](#512-complicated-declarations)
 - [Exercises](#exercises)
     - [Exercise 5-3](#exercise-5-3)
         - [Question](#question)
@@ -24,6 +27,7 @@
     - [Exercise 5-9](#exercise-5-9)
         - [Question](#question-6)
         - [Answer](#answer-2)
+    - [Exercise 5-10](#exercise-5-10)
 - [Footnotes](#footnotes)
 
 <!-- markdown-toc end -->
