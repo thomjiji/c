@@ -5,6 +5,7 @@
 - [6.2 Structures and functions](#62-structures-and-functions)
 - [6.3 Arrays of structures](#63-arrays-of-structures)
 - [6.4 Pointers to structures](#64-pointers-to-structures)
+- [6.5 Self-referential structures](#65-self-referential-structures)
 - [Exercises](#exercises)
     - [Exercise 6-1](#exercise-6-1)
 
@@ -19,7 +20,7 @@ struct point { // <== "point" is called "structure tag"
 }
 ```
 
-The keyword `struct` introduces a structure declaration, which is a list of declarations enclosed in braces. An optional name called a *structure tag* may follow the word `struct`. The tag names this kind of structure, and can be used subsequently as a shorthand for the part of the declaration in braces.
+The keyword `struct` introduces a structure declaration, which is **a list of declarations enclosed in braces**. An optional name called a *structure tag* may follow the word `struct`. The tag names this kind of structure, and can be used subsequently as a shorthand for the part of the declaration in braces.
 
 The variables named in a structure are called *members*.
 
@@ -113,6 +114,8 @@ rp->pt1.x
 (r.pt1).x
 (rp->pt1).x
 ```
+
+`pp->x` 是 `(*pp).x` 的快捷写法。后者先解引用 `pp` 这个指针，然后 access 到 `x` 这个 member。
 
 ---
 
@@ -391,9 +394,38 @@ might well require require eight bytes, not five. The `sizeof` operator returns 
 
 # 6.5 Self-referential structures
 
+Suppose we want to handle the more general problem of counting the occurrences of *all* the words in some input. Since the list of words isn't known in advance, we can't conveniently sort it and use a binary search. Yet we can't do a linear search for each word as it arrives, to see if it's already been seen; the program would take too long. (More precisely, its running time is likely to grow quadratically with the number of input words.) How can we organize the data to cope efficiently with a list of arbitrary words?
+
 假设我们要处理一个更普遍的问题，即计算某个输入中所有单词的出现次数。由于事先并不知道单词列表，我们无法方便地对其进行排序，也无法使用二进制搜索。但我们也不能在每个单词出现时对其进行线性搜索，以确定是否已经出现过；这样程序的运行时间会太长。(更确切地说，程序的运行时间可能会随着输入单词数量的增加而呈二次曲线增长）。我们该如何组织数据，以高效处理任意单词列表呢？
 
 一种解决方案是将迄今为止看到的单词集始终保持排序，在每个单词到达时将其按顺序排列到适当的位置。不过，这不应该通过在线性数组中移位单词来实现——那样也会耗时太长。相反，我们将使用一种名为二叉树 *binary tree* 的数据结构。
+
+---
+
+```c
+struct tnode *addtree(struct tnode *p, char *w)
+{
+    int cond;
+
+    if (p == NULL) // a new word has arrived
+    {
+        p = talloc(); // make a new node
+        p->word = strdup(w);
+        p->count = 1;
+        p->left = p->right = NULL;
+    }
+    else if ((cond = strcmp(w, p->word)) == 0)
+        p->count++;    // repeat word
+    else if (cond < 0) // less than into left subtree
+        p->left = addtree(p->left, w);
+    else // greater than into right subtree
+        p->right = addtree(p->right, w);
+
+    return p;
+}
+```
+
+The function `addtree` is recursive. A word is presented by `main` to the top level (the root) of the tree. At each stage, that word is compared to the word already stored at the node, and is percolated down to either the left or right subtree by a recursive call to `addtree`. Eventually the word either matches something already in the tree (in which case the count is incremeneted), or a null pointer in encountered, indicating that a node must be created and added to the tree. If a new node is created, `addtree` returns a pointer to it, which is installed in the parent node.
 
 # Exercises
 
