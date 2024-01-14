@@ -4,9 +4,11 @@
 - [6.1 Basic of structures](#61-basic-of-structures)
 - [6.2 Structures and functions](#62-structures-and-functions)
 - [6.3 Arrays of structures](#63-arrays-of-structures)
+- [6.4 Pointers to structures](#64-pointers-to-structures)
+- [Exercises](#exercises)
+    - [Exercise 6-1](#exercise-6-1)
 
 <!-- markdown-toc end -->
-
 
 # 6.1 Basic of structures
 
@@ -263,10 +265,143 @@ int main(void)
 }
 ```
 
-`main` 函数当中，while loop 用来 count，for loop 用来 print。在 while loop 中，`getword` 有可能提取到各种字符或字符串，包括那些非 C 关键词的字符或字符串。但在 `if` 的检查中，只有第一个字符是字母的字符串才可以通过。通过这个 `if` 只会进入第二个 `if` 的检查。这里在做一个 binary search，它会在 `keytab` 这个装了很多个叫作 `key` 的 structure 的数组当中，搜寻 `word`。如果在其中找到了的话，那么把 `keytab` 中对应的 `count` 加 1。如果没有找到，那么跳过。 
+`main` 函数当中，while loop 用来 count，for loop 用来 print。在 while loop 中，`getword` 有可能提取到各种字符或字符串，包括那些非 C 关键词的字符或字符串。但在 `if` 的检查中，只有第一个字符是字母的字符串才可以通过。通过这个 `if` 只会进入第二个 `if` 的检查。这里在做一个 binary search，它会在 `keytab` 这个装了很多个叫作 `key` 的 structure 的数组当中，搜寻 `word`。如果在其中找到了的话，那么把 `keytab` 中对应的 `count` 加 1。如果没有找到，那么跳过。
+
+跳过 whitespace 之后，做一个 `if` 检查，如果该字符不是 `EOF`，把第一个字符赋值给 `w`。接着做第二个检查，如果这个字符不是字母（C 的关键词需以字母开头——不允许数字开头的关键词），那么准备把这个字符（可能是 symbol 和 digit）直接返回。
+
+# 6.4 Pointers to structures
+
+```c
+struct key *binsearch(char *word, struct key *tab, int n)
+{
+    int cond;
+    struct key *low = &tab[0];  // the address of the 1st item in array tab
+    struct key *high = &tab[n]; // the address of the n-st item in array tab
+    struct key *mid;
+...
+```
+
+The problem is that `&tab[-1]` and `&tab[n]` are both outside the limits of the array `tab`. The former is strictly illegal, and it's illegal to dereference the latter. The language definition does guarantee, however, that pointer arithmetic that involves the first element beyond the end of an array (that is, `&tab[n]`) will work correctly.
+
+`tab[-1]` 和 `tab[n]` 都是超出了 tab 这个数组的，但是 C 会保证你如果刚好超出 tab 的限制，刚好超出一个位置的话，那么对于涉及 `tab[n]` 的加减，还是会正常工作的。
+
+---
+
+根据我的实测，解引用 `tab[-1]` 会显示 warning（实际上这个操作在 C 中应该说也是不合法的）。不像 Python，使用 `tab[[-1]` 可以直接 access 到最后一个元素。
+
+```c
+#include <stdio.h>
+
+struct key
+{
+    char *word;
+    int count;
+} keytab[] = {
+    "auto", 1,
+    "break", 100,
+};
+
+int main()
+{
+    struct key *p = &keytab[-1];
+    printf("%d\n", p->count);
+}
+```
+
+相反，C 会告诉你，你使用 -1 是在 access 数组边界前面的元素。报错如下：
+
+```sh
+$ gcc tmp.c -o tmp && ./tmp
+tmp.c:14:22: warning: array index -1 is before the beginning of the array [-Warray-bounds]
+    struct key *p = &keytab[-1];
+                     ^      ~~
+tmp.c:3:1: note: array 'keytab' declared here
+struct key
+^
+1 warning generated.
+0
+```
+
+---
+
+因为是 0 base 的，所以在 `keytab` 这个数组中，想要获取第一个元素，使用 `keytab[0]`。0 => 第一个元素。所以 `keytab[2]` 实际上是超出了 `keytab` 这个数组的边界的。但当你 access `keytab[2]` 时，却不会像上面 `keytab[-1]` 一样直接显示 warning。
+
+```c
+int main()
+{
+    struct key *p = &keytab[2];
+    printf("%d\n", p->count);
+}
+```
+
+而是只输出了一个 0：
+
+```sh
+$ gcc tmp.c -o tmp && ./tmp
+0
+```
+
+如果我们更进一步，`keytab[3]` 的话，那么 warning 又会显示出来：
+
+```c
+int main()
+{
+    struct key *p = &keytab[3];
+    printf("%d\n", p->count);
+}
+```
+
+输出：
+
+```sh
+$ gcc tmp.c -o tmp && ./tmp
+tmp.c:14:22: warning: array index 3 is past the end of the array (which contains 2 elements) [-Warray-bounds]
+    struct key *p = &keytab[3];
+                     ^      ~
+tmp.c:3:1: note: array 'keytab' declared here
+struct key
+^
+1 warning generated.
+0
+```
+
+---
+
+```c
+int main(void)
+{
+...
+    for (p = keytab; p < keytab + NKEYS; p++)
+...
+}
+```
+
+If `p` is a pointer to a structure, arithmetic on `p` takes into account the size of the structure, so `p++` increments `p` by the correct amount to get the next element of the array of structures, and the rest stops the loop at the right time.
+
+Don't assume, however, that the size of a structure is the sum of the sizes of its members. Because of alignment requirements for different objects, there may be unnamed "holes" in a structure. Thus, for instance, if a `char` is one byte and a `int` four bytes, the structure
+
+```c
+struct {
+    char c;
+    int i;
+};
+```
+
+might well require require eight bytes, not five. The `sizeof` operator returns the proper value.
+
+# 6.5 Self-referential structures
+
+假设我们要处理一个更普遍的问题，即计算某个输入中所有单词的出现次数。由于事先并不知道单词列表，我们无法方便地对其进行排序，也无法使用二进制搜索。但我们也不能在每个单词出现时对其进行线性搜索，以确定是否已经出现过；这样程序的运行时间会太长。(更确切地说，程序的运行时间可能会随着输入单词数量的增加而呈二次曲线增长）。我们该如何组织数据，以高效处理任意单词列表呢？
+
+一种解决方案是将迄今为止看到的单词集始终保持排序，在每个单词到达时将其按顺序排列到适当的位置。不过，这不应该通过在线性数组中移位单词来实现——那样也会耗时太长。相反，我们将使用一种名为二叉树 *binary tree* 的数据结构。
 
 # Exercises
 
 ## Exercise 6-1
 
 Our version of `getword` does not properly handle underscores, string constants, comments, or preprocessor control lines. Write a better version.
+
+1. 把下划线当作词的一部分，而不是词与词之间的分界线。
+2. 目前，string constants 被分解成好几块分别处理了，修改后的函数应完整保留字符串文字。
+3. 跳过 comments，不处理。
+4. 把 preprocessor directives 视为一个整体进行处理。
